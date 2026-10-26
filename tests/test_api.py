@@ -128,9 +128,11 @@ def test_dashboard_page_is_served(client):
     assert b"CodeCraftHub" in response.data
 
 
-def test_static_assets_are_served(client):
-    assert client.get("/static/style.css").status_code == 200
-    assert client.get("/static/app.js").status_code == 200
+def test_dashboard_is_a_single_file(client):
+    """The lab asks for one HTML file with CSS and JS embedded."""
+    page = client.get("/").data.decode()
+    assert "<style>" in page and "<script>" in page
+    assert 'rel="stylesheet"' not in page and "src=" not in page
 
 
 def test_cors_headers_present(client):

@@ -22,8 +22,8 @@ read the whole thing in one sitting.
 - A statistics endpoint reports the total and the number of courses per status
 - Data is saved to `courses.json`, which is created automatically on first run
 - Writes are atomic, so a crash can never leave the data file half-written
-- A browser dashboard to view, add, edit and delete courses, with no
-  JavaScript framework
+- A browser dashboard to view, add, edit and delete courses: one HTML file
+  with plain CSS and JavaScript, no framework
 - Comes with a curl-based test guide, a runnable curl script and a pytest suite
 
 ## Prerequisites
@@ -93,17 +93,20 @@ startup lines.)
 
 ### The dashboard
 
-Open **http://localhost:5000** in a browser. The page is served by the same
-Flask app, so nothing else needs to run. From there you can:
+With the server running, open **http://localhost:5000** in a browser. You can
+also open `static/index.html` directly from disk (double-click it): the page
+is self-contained and talks to the API at `http://localhost:5000` either way.
+From there you can:
 
 - see the total and per-status counts at the top
-- add a course with the form
-- click **Edit** on a card to load it into the form, then **Save changes**
-- click **Delete** on a card (you are asked to confirm)
+- add a course with the form; required fields are checked before sending
+- click **Edit** on a card to change it in a dialog, then **Save Changes**
+- click **Remove** on a card (you are asked to confirm)
 
-Courses are sorted by target date, and unfinished courses whose date has
-passed are flagged as overdue. The layout adapts to phone screens and follows
-your system's light or dark mode.
+A spinner shows while a request is in flight, and every operation reports
+success or the API's error message. Courses are sorted by target date, each
+card shows when it was added, and unfinished courses whose date has passed are
+flagged as overdue. The layout adapts to phone screens.
 
 Everything the page does goes through the same API described below. Open your
 browser's developer tools (F12, Network tab) while clicking around to watch
@@ -132,51 +135,58 @@ Run the first command again and your course is there.
 
 ## How the dashboard talks to the API
 
-The frontend is three files in `static/`, deliberately kept framework-free so
-the mechanics stay visible:
+The frontend is a single file, `static/index.html`, with the CSS in a
+`<style>` block and the JavaScript in a `<script>` block, deliberately kept
+framework-free so the mechanics stay visible. Read it top to bottom:
 
-- `index.html` is the page structure: the stats strip, one form, and an empty
-  container that JavaScript fills with course cards.
-- `style.css` is the styling. Colours are CSS variables, with a dark variant
-  under `prefers-color-scheme`, and a media query stacks the layout below
-  600px.
-- `app.js` does the work. One helper, `api()`, wraps `fetch()` and turns any
-  non-2xx response into an error whose message is the API's `error` field.
-  Every button and the form submit call that helper, then reload the list.
+- **Styles.** Theme colours are CSS variables (purple primary, amber success,
+  red delete), and one media query stacks the layout below 600px.
+- **Markup.** A stats strip, the Add Course form, an empty container that
+  JavaScript fills with course cards, and a hidden edit dialog.
+- **Script.** `API_BASE` at the top is the backend address. One helper,
+  `api()`, wraps `fetch()`, shows the spinner, and turns a network failure or
+  any non-2xx response into an error whose message is shown on the page.
+  `validate()` checks required fields before anything is sent. The add form
+  calls POST, the edit dialog calls PUT, and Remove calls DELETE; each then
+  reloads the list.
 
-Two details worth copying into your own projects:
+One detail worth copying into your own projects: user-typed text is inserted
+with `textContent`, never `innerHTML`, so a course named `<script>` is
+displayed literally instead of executed.
 
-- The same form is used for adding and editing. A hidden `id` field is empty
-  for a new course and filled when you click Edit, and the submit handler
-  picks POST or PUT accordingly.
-- User-typed text is inserted with `textContent`, never `innerHTML`, so a
-  course named `<script>` is displayed literally instead of executed.
-
-The Flask app also sends CORS headers on every response. That is not needed
-when the page is served from `/`, but it lets the same dashboard run from
-another origin, such as a file on disk or a page generated on Bolt.new, as
-long as `API_BASE` at the top of `app.js` points at the server.
+The Flask app sends CORS headers on every response. That is what lets the
+page work when opened from disk or hosted elsewhere, such as Bolt.new, since
+the browser then sees the API as a different origin.
 
 ### The prompt used to generate the dashboard
 
 The lab asks for the frontend to come from a single prompt. This is the one
-that produced the files in `static/`:
+that produced `static/index.html`, which is the lab's template with the
+backend URL filled in and the stats endpoint added:
 
-> Create a CRUD dashboard for a course-tracking REST API using only plain
-> HTML, CSS and JavaScript, no frameworks, in three files: index.html,
-> style.css, app.js. The API is at the same origin. Endpoints: GET
-> /api/courses (list), GET /api/courses/stats (returns total and by_status
-> counts), POST /api/courses, PUT /api/courses/{id} (partial update
-> allowed), DELETE /api/courses/{id}. A course has id, name, description,
-> target_date (YYYY-MM-DD), status (Not Started | In Progress | Completed),
-> created_at. Errors come back as {"error": "..."} with 4xx status.
-> Requirements: a stats strip at the top; one form used for both add and
-> edit, with a cancel button in edit mode; a responsive card grid listing
-> courses sorted by target date with a coloured status badge and Edit/Delete
-> buttons; confirm before delete; show API error messages in the page; flag
-> overdue courses; clean minimal styling with CSS variables and a dark-mode
-> variant; works at phone width; beginner-friendly comments; use textContent
-> for user data.
+> Create a learning management dashboard with API operations.
+> Requirements: single HTML file with embedded CSS and JavaScript; display
+> all courses in a card layout; a form to add new courses; edit courses in a
+> modal; a delete button for each course; vanilla JavaScript, no frameworks;
+> basic CSS, no CSS frameworks; focus on calling the backend API; no
+> database.
+> Base API URL: http://localhost:5000/api/courses. All API calls handle
+> loading states and errors.
+> Endpoints: GET /api/courses; GET /api/courses/stats (returns total and
+> by_status counts); POST /api/courses (body: name, description,
+> target_date, status); PUT /api/courses/{id} (body: any fields to update);
+> DELETE /api/courses/{id}.
+> Course fields: id (read-only), name (required, text), description
+> (required, textarea), target_date (required, date, YYYY-MM-DD), status
+> (required, dropdown: Not Started, In Progress, Completed), created_at
+> (read-only, shown as a formatted date).
+> Design: header "CodeCraftHub: Your Learning Management Platform"; Add
+> Course form at the top; course list below with Edit and Remove buttons;
+> clean card layout; loading spinner while fetching or saving; success and
+> error messages for every operation; responsive for mobile.
+> Colours: #8B5CF6 primary, #F59E0B success, #EF4444 delete.
+> Error handling: show an error if an API call fails; validate required
+> fields before submission; user-friendly messages.
 
 ## REST concepts in 60 seconds
 
@@ -410,13 +420,12 @@ Remember to use the new port in your curl commands too.
 **`curl: (7) Failed to connect to localhost port 5000`**
 The server is not running. Start it in a separate terminal and leave it open.
 
-**The dashboard shows "Could not load courses" or stays empty**
-The page cannot reach the API. If you opened `index.html` directly from disk
-or host it elsewhere, set `API_BASE` at the top of `static/app.js` to the
-server address, e.g. `"http://localhost:5000"`. If you opened
-http://localhost:5000 and still see it, check the server terminal for errors.
+**The dashboard says "Cannot reach the backend at http://localhost:5000"**
+The server is not running, or it runs on another port. Start it with
+`python app.py`, or change `API_BASE` near the top of the `<script>` block in
+`static/index.html` to match.
 
-**The dashboard looks stale after editing app.js or style.css**
+**The dashboard looks stale after editing index.html**
 The browser cached the old file. Reload with `Ctrl+Shift+R` (or `Cmd+Shift+R`).
 
 **`{"error": "Request body must be valid JSON"}` but my JSON looks right**
@@ -452,10 +461,8 @@ Run `pytest` from the project root (the folder containing `app.py` and
 ```
 CodeCraftHub/
 ├── app.py              # The whole API: storage helpers, validation, routes
-├── static/             # The dashboard, served by Flask at /
-│   ├── index.html      #   page structure
-│   ├── style.css       #   styling, responsive + dark mode
-│   └── app.js          #   fetch() calls to the API and DOM updates
+├── static/
+│   └── index.html      # The dashboard: one file with CSS and JS embedded
 ├── courses.json        # Your data. Created automatically; safe to delete.
 ├── requirements.txt    # Python packages to install (Flask, Werkzeug)
 ├── pytest.ini          # Tells pytest where to find app.py and the tests
@@ -496,6 +503,7 @@ Dashboard:
 
 - Add a status filter above the course list
 - Replace the browser `confirm()` dialog with an inline "Are you sure?" button
+- Add a dark-mode variant of the theme using `prefers-color-scheme`
 - Show a loading indicator while requests are in flight
 
 API:

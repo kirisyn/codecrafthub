@@ -1,104 +1,577 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CodeCraftHub</title>
-  <link rel="stylesheet" href="/static/style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CodeCraftHub</title>
+<style>
+  /* =======================================================================
+     CodeCraftHub dashboard - single file, plain CSS, no framework.
+     Theme colours live in variables so they can be changed in one place.
+     ======================================================================= */
+  :root {
+    --primary: #8B5CF6;      /* purple: header, main buttons, focus rings   */
+    --primary-dark: #7C3AED;
+    --success: #F59E0B;      /* amber: success messages, "Completed" badge  */
+    --danger: #EF4444;       /* red: delete buttons, error messages         */
+    --bg: #F5F3FF;
+    --surface: #FFFFFF;
+    --text: #1F2937;
+    --muted: #6B7280;
+    --border: #E5E7EB;
+    --radius: 10px;
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  .container { max-width: 1000px; margin: 0 auto; padding: 0 16px; }
+  h1, h2, h3 { margin: 0; }
+  h2 { font-size: 1.2rem; margin-bottom: 0.75rem; }
+  .hidden { display: none !important; }
+
+  /* ---- Header ---------------------------------------------------------- */
+  header {
+    background: var(--primary);
+    color: #fff;
+    padding: 1.5rem 0;
+    margin-bottom: 1.5rem;
+  }
+  header h1 { font-size: 1.6rem; }
+  header p { margin: 0.25rem 0 0; opacity: 0.9; }
+
+  /* ---- Statistics strip ------------------------------------------------ */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    margin-bottom: 1.5rem;
+  }
+  .stat {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 0.8rem 1rem;
+    border-top: 4px solid var(--border);
+  }
+  .stat[data-status="Not Started"] { border-top-color: var(--muted); }
+  .stat[data-status="In Progress"] { border-top-color: var(--primary); }
+  .stat[data-status="Completed"]   { border-top-color: var(--success); }
+  .stat strong { display: block; font-size: 1.7rem; line-height: 1.1; }
+  .stat span { font-size: 0.85rem; color: var(--muted); }
+
+  /* ---- Messages and spinner -------------------------------------------- */
+  .message {
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius);
+    margin-bottom: 1rem;
+    color: #fff;
+  }
+  .message.success { background: var(--success); }
+  .message.error   { background: var(--danger); }
+
+  .loading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--muted);
+    margin-bottom: 1rem;
+  }
+  .spinner {
+    width: 22px; height: 22px;
+    border: 3px solid var(--border);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ---- Cards and forms ------------------------------------------------- */
+  .card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+  .field { margin-bottom: 1rem; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+  label { display: block; font-weight: 600; font-size: 0.9rem; margin-bottom: 0.3rem; }
+  input, textarea, select {
+    width: 100%;
+    padding: 0.55rem 0.7rem;
+    font: inherit;
+    color: var(--text);
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+  }
+  input:focus, textarea:focus, select:focus {
+    outline: 2px solid var(--primary);
+    outline-offset: 1px;
+  }
+  textarea { resize: vertical; }
+  .field-error { color: var(--danger); font-size: 0.85rem; margin-top: 0.25rem; }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  /* ---- Buttons --------------------------------------------------------- */
+  .btn {
+    padding: 0.55rem 1rem;
+    font: inherit;
+    font-weight: 600;
+    color: var(--text);
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .btn:hover:not(:disabled) { filter: brightness(0.95); }
+  .btn:disabled { opacity: 0.6; cursor: wait; }
+  .btn-primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+  .btn-primary:hover:not(:disabled) { background: var(--primary-dark); filter: none; }
+  .btn-danger { color: var(--danger); border-color: var(--danger); }
+  .btn-sm { padding: 0.35rem 0.7rem; font-size: 0.85rem; }
+
+  /* ---- Course list ----------------------------------------------------- */
+  .list-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
+  .courses {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+  }
+  .course {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 1rem 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  .course-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .course h3 { font-size: 1.05rem; overflow-wrap: anywhere; }
+  .course p { margin: 0; color: var(--muted); overflow-wrap: anywhere; }
+  .meta { font-size: 0.85rem; color: var(--muted); }
+  .meta.overdue { color: var(--danger); font-weight: 600; }
+  .course .actions { margin-top: auto; padding-top: 0.5rem; }
+
+  .badge {
+    display: inline-block;
+    padding: 0.15rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #fff;
+    white-space: nowrap;
+  }
+  .badge[data-status="Not Started"] { background: var(--muted); }
+  .badge[data-status="In Progress"] { background: var(--primary); }
+  .badge[data-status="Completed"]   { background: var(--success); }
+
+  .empty { text-align: center; color: var(--muted); padding: 2rem 0; }
+
+  /* ---- Edit modal ------------------------------------------------------ */
+  .modal-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex; align-items: center; justify-content: center;
+    padding: 16px;
+    z-index: 10;
+  }
+  .modal {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    width: 100%;
+    max-width: 520px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  footer { margin: 3rem 0 1.5rem; text-align: center; color: var(--muted); font-size: 0.9rem; }
+  code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.9em; }
+
+  /* ---- Mobile ---------------------------------------------------------- */
+  @media (max-width: 600px) {
+    .two-col { grid-template-columns: 1fr; }
+    .courses { grid-template-columns: 1fr; }
+    header h1 { font-size: 1.3rem; }
+  }
+</style>
 </head>
 <body>
 
-  <header class="site-header">
-    <div class="container">
-      <h1>CodeCraftHub</h1>
-      <p class="tagline">Track the courses you want to learn</p>
+<header>
+  <div class="container">
+    <h1>CodeCraftHub: Your Learning Management Platform</h1>
+    <p>Track the courses you want to learn</p>
+  </div>
+</header>
+
+<main class="container">
+
+  <!-- Statistics: filled from GET /api/courses/stats -->
+  <section class="stats" aria-label="Statistics">
+    <div class="stat"><strong id="stat-total">0</strong><span>Total</span></div>
+    <div class="stat" data-status="Not Started"><strong id="stat-ns">0</strong><span>Not Started</span></div>
+    <div class="stat" data-status="In Progress"><strong id="stat-ip">0</strong><span>In Progress</span></div>
+    <div class="stat" data-status="Completed"><strong id="stat-c">0</strong><span>Completed</span></div>
+  </section>
+
+  <!-- Feedback area: success / error messages and the loading spinner -->
+  <div id="message" class="message hidden" role="status"></div>
+  <div id="loading" class="loading hidden"><div class="spinner"></div><span id="loading-text">Loading...</span></div>
+
+  <!-- Add Course form -->
+  <section class="card">
+    <h2>Add Course</h2>
+    <form id="add-form" novalidate>
+      <div class="field">
+        <label for="add-name">Name</label>
+        <input type="text" id="add-name" name="name" placeholder="e.g. Flask Fundamentals">
+        <div class="field-error" data-for="name"></div>
+      </div>
+      <div class="field">
+        <label for="add-description">Description</label>
+        <textarea id="add-description" name="description" rows="2" placeholder="What will you learn?"></textarea>
+        <div class="field-error" data-for="description"></div>
+      </div>
+      <div class="two-col">
+        <div class="field">
+          <label for="add-target_date">Target date</label>
+          <input type="date" id="add-target_date" name="target_date">
+          <div class="field-error" data-for="target_date"></div>
+        </div>
+        <div class="field">
+          <label for="add-status">Status</label>
+          <select id="add-status" name="status">
+            <option value="Not Started">Not Started</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Completed">Completed</option>
+          </select>
+          <div class="field-error" data-for="status"></div>
+        </div>
+      </div>
+      <div class="actions">
+        <button type="submit" class="btn btn-primary">Add Course</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- Course list: filled from GET /api/courses -->
+  <section>
+    <div class="list-head">
+      <h2>Your Courses</h2>
+      <button type="button" class="btn btn-sm" id="refresh">Refresh</button>
     </div>
-  </header>
+    <div id="courses" class="courses"></div>
+    <p id="empty" class="empty hidden">No courses yet. Add your first one above.</p>
+  </section>
 
-  <main class="container">
+</main>
 
-    <!-- Statistics strip: filled by JavaScript from GET /api/courses/stats -->
-    <section class="stats" aria-label="Course statistics">
-      <div class="stat">
-        <span class="stat-value" id="stat-total">0</span>
-        <span class="stat-label">Total</span>
+<!-- Edit modal: hidden until an Edit button is clicked -->
+<div id="modal" class="modal-backdrop hidden">
+  <div class="modal" role="dialog" aria-labelledby="edit-title">
+    <h2 id="edit-title">Edit Course</h2>
+    <form id="edit-form" novalidate>
+      <input type="hidden" name="id">
+      <div class="field">
+        <label for="edit-name">Name</label>
+        <input type="text" id="edit-name" name="name">
+        <div class="field-error" data-for="name"></div>
       </div>
-      <div class="stat stat-not-started">
-        <span class="stat-value" id="stat-not-started">0</span>
-        <span class="stat-label">Not Started</span>
+      <div class="field">
+        <label for="edit-description">Description</label>
+        <textarea id="edit-description" name="description" rows="2"></textarea>
+        <div class="field-error" data-for="description"></div>
       </div>
-      <div class="stat stat-in-progress">
-        <span class="stat-value" id="stat-in-progress">0</span>
-        <span class="stat-label">In Progress</span>
-      </div>
-      <div class="stat stat-completed">
-        <span class="stat-value" id="stat-completed">0</span>
-        <span class="stat-label">Completed</span>
-      </div>
-    </section>
-
-    <!-- Message area for success / error feedback from the API -->
-    <div id="message" class="message hidden" role="status"></div>
-
-    <!-- The same form is used both to add a course and to edit one.
-         JavaScript switches the title and button text and remembers
-         which course id is being edited (if any). -->
-    <section class="card">
-      <h2 id="form-title">Add a course</h2>
-      <form id="course-form" novalidate>
-        <input type="hidden" id="course-id">
-
-        <div class="form-row">
-          <label for="name">Course name</label>
-          <input type="text" id="name" name="name" required maxlength="100" placeholder="e.g. Flask Fundamentals">
+      <div class="two-col">
+        <div class="field">
+          <label for="edit-target_date">Target date</label>
+          <input type="date" id="edit-target_date" name="target_date">
+          <div class="field-error" data-for="target_date"></div>
         </div>
-
-        <div class="form-row">
-          <label for="description">Description</label>
-          <textarea id="description" name="description" required rows="2" placeholder="What will you learn?"></textarea>
+        <div class="field">
+          <label for="edit-status">Status</label>
+          <select id="edit-status" name="status">
+            <option value="Not Started">Not Started</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Completed">Completed</option>
+          </select>
+          <div class="field-error" data-for="status"></div>
         </div>
-
-        <div class="form-grid">
-          <div class="form-row">
-            <label for="target_date">Target completion date</label>
-            <input type="date" id="target_date" name="target_date" required>
-          </div>
-
-          <div class="form-row">
-            <label for="status">Status</label>
-            <select id="status" name="status" required>
-              <option value="Not Started">Not Started</option>
-              <option value="In Progress">In Progress</option>
-              <option value="Completed">Completed</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="form-actions">
-          <button type="submit" class="btn btn-primary" id="submit-btn">Add course</button>
-          <button type="button" class="btn" id="cancel-btn" hidden>Cancel</button>
-        </div>
-      </form>
-    </section>
-
-    <!-- Course list: filled by JavaScript from GET /api/courses -->
-    <section>
-      <div class="list-header">
-        <h2>Your courses</h2>
-        <button type="button" class="btn btn-small" id="refresh-btn" title="Reload from the server">Refresh</button>
       </div>
-      <div id="course-list" class="course-list"></div>
-      <p id="empty-state" class="empty-state hidden">No courses yet. Add your first one above.</p>
-    </section>
+      <p class="meta" id="edit-created"></p>
+      <div class="actions">
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+        <button type="button" class="btn" id="edit-cancel">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
 
-  </main>
+<footer>Talks to the REST API at <code id="api-url-label"></code></footer>
 
-  <footer class="site-footer">
-    <div class="container">
-      Talks to the REST API at <code>/api/courses</code>
-    </div>
-  </footer>
+<script>
+/* =========================================================================
+   CodeCraftHub dashboard - plain JavaScript, no framework.
 
-  <script src="/static/app.js"></script>
+   Everything goes through the backend REST API with fetch():
+     GET    /api/courses         list
+     GET    /api/courses/stats   counts for the statistics strip
+     POST   /api/courses         create
+     PUT    /api/courses/{id}    update (only the changed fields are sent)
+     DELETE /api/courses/{id}    remove
+
+   Change API_BASE if your backend runs somewhere else (e.g. port 8080).
+   ========================================================================= */
+
+const API_BASE = "http://localhost:5000";
+const API_URL  = API_BASE + "/api/courses";
+const STATUSES = ["Not Started", "In Progress", "Completed"];
+
+// ---- Page elements --------------------------------------------------------
+const $ = (id) => document.getElementById(id);
+const addForm   = $("add-form");
+const editForm  = $("edit-form");
+const modal     = $("modal");
+const listEl    = $("courses");
+const emptyEl   = $("empty");
+const messageEl = $("message");
+const loadingEl = $("loading");
+
+$("api-url-label").textContent = API_URL;
+
+// ---- Loading state and messages ------------------------------------------
+let busy = 0;                        // how many requests are in flight
+
+function setLoading(on, text) {
+  busy += on ? 1 : -1;
+  $("loading-text").textContent = text || "Loading...";
+  loadingEl.classList.toggle("hidden", busy === 0);
+  // Disable every button while something is saving, to avoid double submits.
+  document.querySelectorAll("button").forEach((b) => (b.disabled = busy > 0));
+}
+
+let messageTimer;
+function showMessage(text, type) {
+  messageEl.textContent = text;
+  messageEl.className = "message " + type;
+  clearTimeout(messageTimer);
+  messageTimer = setTimeout(() => messageEl.classList.add("hidden"), 4000);
+}
+
+// ---- API helper -----------------------------------------------------------
+/**
+ * Send one request and return the parsed JSON. Any non-2xx response, or a
+ * network failure, becomes an Error with a message fit to show the user.
+ */
+async function api(method, url, body, loadingText) {
+  setLoading(true, loadingText);
+  try {
+    const options = { method, headers: {} };
+    if (body !== undefined) {
+      options.headers["Content-Type"] = "application/json";
+      options.body = JSON.stringify(body);
+    }
+    let response;
+    try {
+      response = await fetch(url, options);
+    } catch {
+      throw new Error("Cannot reach the backend at " + API_BASE + ". Is it running?");
+    }
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data.error || "Request failed with status " + response.status);
+    }
+    return data;
+  } finally {
+    setLoading(false);
+  }
+}
+
+// ---- Client-side validation ----------------------------------------------
+/** Return {field: message} for every problem found; empty object if valid. */
+function validate(values) {
+  const errors = {};
+  if (!values.name)        errors.name = "Name is required.";
+  if (!values.description) errors.description = "Description is required.";
+  if (!values.target_date) errors.target_date = "Target date is required.";
+  else if (!/^\d{4}-\d{2}-\d{2}$/.test(values.target_date)) errors.target_date = "Use the format YYYY-MM-DD.";
+  if (!STATUSES.includes(values.status)) errors.status = "Choose a valid status.";
+  return errors;
+}
+
+function readForm(form) {
+  return {
+    name:        form.elements.name.value.trim(),
+    description: form.elements.description.value.trim(),
+    target_date: form.elements.target_date.value,
+    status:      form.elements.status.value,
+  };
+}
+
+/** Write validation messages under the matching fields of a form. */
+function showFieldErrors(form, errors) {
+  form.querySelectorAll(".field-error").forEach((el) => {
+    el.textContent = errors[el.dataset.for] || "";
+  });
+}
+
+// ---- Rendering ------------------------------------------------------------
+async function loadCourses() {
+  try {
+    const [courses, stats] = await Promise.all([
+      api("GET", API_URL),
+      api("GET", API_URL + "/stats"),
+    ]);
+    renderStats(stats);
+    renderCourses(courses);
+  } catch (err) {
+    showMessage(err.message, "error");
+  }
+}
+
+function renderStats(stats) {
+  $("stat-total").textContent = stats.total;
+  $("stat-ns").textContent = stats.by_status["Not Started"];
+  $("stat-ip").textContent = stats.by_status["In Progress"];
+  $("stat-c").textContent  = stats.by_status["Completed"];
+}
+
+function renderCourses(courses) {
+  listEl.innerHTML = "";
+  emptyEl.classList.toggle("hidden", courses.length > 0);
+  courses.sort((a, b) => a.target_date.localeCompare(b.target_date));
+  courses.forEach((course) => listEl.appendChild(courseCard(course)));
+}
+
+/** Build one course card. All user text goes through textContent, never
+    innerHTML, so a course called "<b>hi</b>" is shown literally. */
+function courseCard(course) {
+  const el = (tag, cls, text) => {
+    const node = document.createElement(tag);
+    if (cls) node.className = cls;
+    if (text !== undefined) node.textContent = text;
+    return node;
+  };
+
+  const today   = new Date().toISOString().slice(0, 10);
+  const overdue = course.status !== "Completed" && course.target_date < today;
+
+  const card  = el("article", "course");
+  const top   = el("div", "course-top");
+  const badge = el("span", "badge", course.status);
+  badge.dataset.status = course.status;
+  top.append(el("h3", "", course.name), badge);
+
+  const target = el("div", "meta" + (overdue ? " overdue" : ""),
+    (overdue ? "Overdue, target was " : "Target: ") + formatDate(course.target_date));
+  const created = el("div", "meta", "Added " + formatDateTime(course.created_at) + " · #" + course.id);
+
+  const actions = el("div", "actions");
+  const editBtn = el("button", "btn btn-sm", "Edit");
+  editBtn.type = "button";
+  editBtn.addEventListener("click", () => openEdit(course));
+  const removeBtn = el("button", "btn btn-sm btn-danger", "Remove");
+  removeBtn.type = "button";
+  removeBtn.addEventListener("click", () => removeCourse(course));
+  actions.append(editBtn, removeBtn);
+
+  card.append(top, el("p", "", course.description), target, created, actions);
+  return card;
+}
+
+function formatDate(iso) {                       // "2026-12-31" -> "31 Dec 2026"
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+}
+
+function formatDateTime(iso) {                   // "2026-10-26T15:02:34" -> local date + time
+  const date = new Date(iso);
+  return isNaN(date) ? iso : date.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+}
+
+// ---- Create ---------------------------------------------------------------
+addForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const values = readForm(addForm);
+  const errors = validate(values);
+  showFieldErrors(addForm, errors);
+  if (Object.keys(errors).length) return;
+
+  try {
+    const created = await api("POST", API_URL, values, "Saving...");
+    showMessage('Course "' + created.name + '" added.', "success");
+    addForm.reset();
+    await loadCourses();
+  } catch (err) {
+    showMessage(err.message, "error");
+  }
+});
+
+// ---- Update (modal) -------------------------------------------------------
+function openEdit(course) {
+  editForm.elements.id.value          = course.id;
+  editForm.elements.name.value        = course.name;
+  editForm.elements.description.value = course.description;
+  editForm.elements.target_date.value = course.target_date;
+  editForm.elements.status.value      = course.status;
+  $("edit-created").textContent = "Course #" + course.id + ", added " + formatDateTime(course.created_at);
+  showFieldErrors(editForm, {});
+  modal.classList.remove("hidden");
+  editForm.elements.name.focus();
+}
+
+function closeEdit() { modal.classList.add("hidden"); }
+
+editForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const values = readForm(editForm);
+  const errors = validate(values);
+  showFieldErrors(editForm, errors);
+  if (Object.keys(errors).length) return;
+
+  const id = editForm.elements.id.value;
+  try {
+    const updated = await api("PUT", API_URL + "/" + id, values, "Saving...");
+    showMessage('Course "' + updated.name + '" updated.', "success");
+    closeEdit();
+    await loadCourses();
+  } catch (err) {
+    showMessage(err.message, "error");
+  }
+});
+
+$("edit-cancel").addEventListener("click", closeEdit);
+modal.addEventListener("click", (e) => { if (e.target === modal) closeEdit(); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeEdit(); });
+
+// ---- Delete ---------------------------------------------------------------
+async function removeCourse(course) {
+  if (!confirm('Remove "' + course.name + '"? This cannot be undone.')) return;
+  try {
+    await api("DELETE", API_URL + "/" + course.id, undefined, "Removing...");
+    showMessage('Course "' + course.name + '" removed.', "success");
+    await loadCourses();
+  } catch (err) {
+    showMessage(err.message, "error");
+  }
+}
+
+// ---- Start ----------------------------------------------------------------
+$("refresh").addEventListener("click", loadCourses);
+loadCourses();
+</script>
 </body>
 </html>
