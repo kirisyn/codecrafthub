@@ -31,6 +31,15 @@ To run **all** tests automatically instead: `bash tests/test_api.sh`
 
 ## Part 1 – Successful operations
 
+### 1.0 The dashboard page
+
+```bash
+curl -s -o /dev/null -w "%{http_code} %{content_type}\n" $BASE/
+```
+
+Expected: `200 text/html; charset=utf-8`. Open http://localhost:5000 in a
+browser to use it.
+
 ### 1.1 Get all courses (empty on a fresh install)
 
 ```bash

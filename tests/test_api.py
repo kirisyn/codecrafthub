@@ -118,6 +118,35 @@ def test_data_persists_in_file(client):
 
 
 # ---------------------------------------------------------------------------
+# Dashboard frontend
+# ---------------------------------------------------------------------------
+
+def test_dashboard_page_is_served(client):
+    response = client.get("/")
+    assert response.status_code == 200
+    assert response.content_type.startswith("text/html")
+    assert b"CodeCraftHub" in response.data
+
+
+def test_static_assets_are_served(client):
+    assert client.get("/static/style.css").status_code == 200
+    assert client.get("/static/app.js").status_code == 200
+
+
+def test_cors_headers_present(client):
+    response = client.get("/api/courses")
+    assert response.headers["Access-Control-Allow-Origin"] == "*"
+    assert "PUT" in response.headers["Access-Control-Allow-Methods"]
+
+
+def test_cors_preflight(client):
+    """Browsers send OPTIONS before a cross-origin PUT or DELETE."""
+    response = client.options("/api/courses/1")
+    assert response.status_code == 200
+    assert "DELETE" in response.headers["Access-Control-Allow-Methods"]
+
+
+# ---------------------------------------------------------------------------
 # Statistics endpoint
 # ---------------------------------------------------------------------------
 

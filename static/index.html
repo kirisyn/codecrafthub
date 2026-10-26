@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CodeCraftHub</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="container">
+      <h1>CodeCraftHub</h1>
+      <p class="tagline">Track the courses you want to learn</p>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!-- Statistics strip: filled by JavaScript from GET /api/courses/stats -->
+    <section class="stats" aria-label="Course statistics">
+      <div class="stat">
+        <span class="stat-value" id="stat-total">0</span>
+        <span class="stat-label">Total</span>
+      </div>
+      <div class="stat stat-not-started">
+        <span class="stat-value" id="stat-not-started">0</span>
+        <span class="stat-label">Not Started</span>
+      </div>
+      <div class="stat stat-in-progress">
+        <span class="stat-value" id="stat-in-progress">0</span>
+        <span class="stat-label">In Progress</span>
+      </div>
+      <div class="stat stat-completed">
+        <span class="stat-value" id="stat-completed">0</span>
+        <span class="stat-label">Completed</span>
+      </div>
+    </section>
+
+    <!-- Message area for success / error feedback from the API -->
+    <div id="message" class="message hidden" role="status"></div>
+
+    <!-- The same form is used both to add a course and to edit one.
+         JavaScript switches the title and button text and remembers
+         which course id is being edited (if any). -->
+    <section class="card">
+      <h2 id="form-title">Add a course</h2>
+      <form id="course-form" novalidate>
+        <input type="hidden" id="course-id">
+
+        <div class="form-row">
+          <label for="name">Course name</label>
+          <input type="text" id="name" name="name" required maxlength="100" placeholder="e.g. Flask Fundamentals">
+        </div>
+
+        <div class="form-row">
+          <label for="description">Description</label>
+          <textarea id="description" name="description" required rows="2" placeholder="What will you learn?"></textarea>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-row">
+            <label for="target_date">Target completion date</label>
+            <input type="date" id="target_date" name="target_date" required>
+          </div>
+
+          <div class="form-row">
+            <label for="status">Status</label>
+            <select id="status" name="status" required>
+              <option value="Not Started">Not Started</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Completed">Completed</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary" id="submit-btn">Add course</button>
+          <button type="button" class="btn" id="cancel-btn" hidden>Cancel</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Course list: filled by JavaScript from GET /api/courses -->
+    <section>
+      <div class="list-header">
+        <h2>Your courses</h2>
+        <button type="button" class="btn btn-small" id="refresh-btn" title="Reload from the server">Refresh</button>
+      </div>
+      <div id="course-list" class="course-list"></div>
+      <p id="empty-state" class="empty-state hidden">No courses yet. Add your first one above.</p>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      Talks to the REST API at <code>/api/courses</code>
+    </div>
+  </footer>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

@@ -2,8 +2,9 @@
 
 A small personalized learning platform where developers keep track of the
 courses they want to learn. It is built as a **REST API** with Python and
-Flask, and it stores everything in a plain JSON file, so there is no database
-to install and nothing to configure.
+Flask, with a **dashboard** in plain HTML, CSS and JavaScript on top. All
+data lives in a plain JSON file, so there is no database to install and
+nothing to configure.
 
 The project is intentionally simple. Its goal is to teach the building blocks
 of a REST API: HTTP methods, URL design, JSON request and response bodies,
@@ -21,6 +22,8 @@ read the whole thing in one sitting.
 - A statistics endpoint reports the total and the number of courses per status
 - Data is saved to `courses.json`, which is created automatically on first run
 - Writes are atomic, so a crash can never leave the data file half-written
+- A browser dashboard to view, add, edit and delete courses, with no
+  JavaScript framework
 - Comes with a curl-based test guide, a runnable curl script and a pytest suite
 
 ## Prerequisites
@@ -85,8 +88,26 @@ The API is now available at `http://localhost:5000`. The server runs in debug
 mode, so it restarts automatically whenever you edit `app.py` and shows
 detailed error pages. Press `Ctrl+C` to stop it.
 
-(`flask --app app run --debug` starts the same server, just without the three
+(`flask --app app run --debug` starts the same server, just without the
 startup lines.)
+
+### The dashboard
+
+Open **http://localhost:5000** in a browser. The page is served by the same
+Flask app, so nothing else needs to run. From there you can:
+
+- see the total and per-status counts at the top
+- add a course with the form
+- click **Edit** on a card to load it into the form, then **Save changes**
+- click **Delete** on a card (you are asked to confirm)
+
+Courses are sorted by target date, and unfinished courses whose date has
+passed are flagged as overdue. The layout adapts to phone screens and follows
+your system's light or dark mode.
+
+Everything the page does goes through the same API described below. Open your
+browser's developer tools (F12, Network tab) while clicking around to watch
+the requests being made.
 
 On the first request, the app creates an empty `courses.json` next to
 `app.py`. Open it in any editor to see your data as it is saved.
@@ -108,6 +129,54 @@ curl -X POST http://localhost:5000/api/courses \
 ```
 
 Run the first command again and your course is there.
+
+## How the dashboard talks to the API
+
+The frontend is three files in `static/`, deliberately kept framework-free so
+the mechanics stay visible:
+
+- `index.html` is the page structure: the stats strip, one form, and an empty
+  container that JavaScript fills with course cards.
+- `style.css` is the styling. Colours are CSS variables, with a dark variant
+  under `prefers-color-scheme`, and a media query stacks the layout below
+  600px.
+- `app.js` does the work. One helper, `api()`, wraps `fetch()` and turns any
+  non-2xx response into an error whose message is the API's `error` field.
+  Every button and the form submit call that helper, then reload the list.
+
+Two details worth copying into your own projects:
+
+- The same form is used for adding and editing. A hidden `id` field is empty
+  for a new course and filled when you click Edit, and the submit handler
+  picks POST or PUT accordingly.
+- User-typed text is inserted with `textContent`, never `innerHTML`, so a
+  course named `<script>` is displayed literally instead of executed.
+
+The Flask app also sends CORS headers on every response. That is not needed
+when the page is served from `/`, but it lets the same dashboard run from
+another origin, such as a file on disk or a page generated on Bolt.new, as
+long as `API_BASE` at the top of `app.js` points at the server.
+
+### The prompt used to generate the dashboard
+
+The lab asks for the frontend to come from a single prompt. This is the one
+that produced the files in `static/`:
+
+> Create a CRUD dashboard for a course-tracking REST API using only plain
+> HTML, CSS and JavaScript, no frameworks, in three files: index.html,
+> style.css, app.js. The API is at the same origin. Endpoints: GET
+> /api/courses (list), GET /api/courses/stats (returns total and by_status
+> counts), POST /api/courses, PUT /api/courses/{id} (partial update
+> allowed), DELETE /api/courses/{id}. A course has id, name, description,
+> target_date (YYYY-MM-DD), status (Not Started | In Progress | Completed),
+> created_at. Errors come back as {"error": "..."} with 4xx status.
+> Requirements: a stats strip at the top; one form used for both add and
+> edit, with a cancel button in edit mode; a responsive card grid listing
+> courses sorted by target date with a coloured status badge and Edit/Delete
+> buttons; confirm before delete; show API error messages in the page; flag
+> overdue courses; clean minimal styling with CSS variables and a dark-mode
+> variant; works at phone width; beginner-friendly comments; use textContent
+> for user data.
 
 ## REST concepts in 60 seconds
 
@@ -131,6 +200,7 @@ If REST is new to you, this is the vocabulary used below.
 | POST | `/api/courses` | Create a course | 201 |
 | GET | `/api/courses/<id>` | Get one course | 200 |
 | GET | `/api/courses/stats` | Totals and count per status | 200 |
+| GET | `/` | The dashboard page (HTML) | 200 |
 | PUT | `/api/courses/<id>` | Update a course | 200 |
 | DELETE | `/api/courses/<id>` | Delete a course | 200 |
 
@@ -324,7 +394,7 @@ pip install pytest
 pytest -v
 ```
 
-Expected output ends with `33 passed`.
+Expected output ends with `37 passed`.
 
 ## Troubleshooting
 
@@ -339,6 +409,15 @@ Remember to use the new port in your curl commands too.
 
 **`curl: (7) Failed to connect to localhost port 5000`**
 The server is not running. Start it in a separate terminal and leave it open.
+
+**The dashboard shows "Could not load courses" or stays empty**
+The page cannot reach the API. If you opened `index.html` directly from disk
+or host it elsewhere, set `API_BASE` at the top of `static/app.js` to the
+server address, e.g. `"http://localhost:5000"`. If you opened
+http://localhost:5000 and still see it, check the server terminal for errors.
+
+**The dashboard looks stale after editing app.js or style.css**
+The browser cached the old file. Reload with `Ctrl+Shift+R` (or `Cmd+Shift+R`).
 
 **`{"error": "Request body must be valid JSON"}` but my JSON looks right**
 The usual causes:
@@ -373,6 +452,10 @@ Run `pytest` from the project root (the folder containing `app.py` and
 ```
 CodeCraftHub/
 ├── app.py              # The whole API: storage helpers, validation, routes
+├── static/             # The dashboard, served by Flask at /
+│   ├── index.html      #   page structure
+│   ├── style.css       #   styling, responsive + dark mode
+│   └── app.js          #   fetch() calls to the API and DOM updates
 ├── courses.json        # Your data. Created automatically; safe to delete.
 ├── requirements.txt    # Python packages to install (Flask, Werkzeug)
 ├── pytest.ini          # Tells pytest where to find app.py and the tests
@@ -401,11 +484,21 @@ Read it top to bottom. Each section builds on the previous one.
 4. **Error handlers.** Flask normally answers unknown URLs with an HTML page.
    These handlers make sure every error, including file problems, comes back
    as JSON.
-5. **Routes.** One function per endpoint. Each follows the same pattern: read
+5. **Dashboard route and CORS.** `/` serves `static/index.html`, and a small
+   hook adds CORS headers to every response.
+6. **Routes.** One function per endpoint. Each follows the same pattern: read
    and validate the input, load the courses, change the list, save it, return
    a response with the right status code.
 
 ## Ideas for what to build next
+
+Dashboard:
+
+- Add a status filter above the course list
+- Replace the browser `confirm()` dialog with an inline "Are you sure?" button
+- Show a loading indicator while requests are in flight
+
+API:
 
 Once the basics make sense, these are natural extensions, roughly in order of
 difficulty:

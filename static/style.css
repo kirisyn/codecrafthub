@@ -1,0 +1,302 @@
+/* ---------------------------------------------------------------------------
+   CodeCraftHub dashboard styles
+   Plain CSS, no framework. Colours live in variables at the top so the whole
+   theme can be changed in one place, and a dark variant is applied
+   automatically when the operating system prefers it.
+   --------------------------------------------------------------------------- */
+
+:root {
+  --bg: #f4f6f8;
+  --surface: #ffffff;
+  --text: #1f2933;
+  --muted: #6b7280;
+  --border: #e2e6ea;
+  --primary: #2563eb;
+  --primary-text: #ffffff;
+  --danger: #dc2626;
+  --success-bg: #dcfce7;
+  --success-text: #166534;
+  --error-bg: #fee2e2;
+  --error-text: #991b1b;
+  --not-started: #9ca3af;
+  --in-progress: #f59e0b;
+  --completed: #16a34a;
+  --radius: 10px;
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #111827;
+    --surface: #1f2937;
+    --text: #f3f4f6;
+    --muted: #9ca3af;
+    --border: #374151;
+    --primary: #3b82f6;
+    --success-bg: #14532d;
+    --success-text: #bbf7d0;
+    --error-bg: #7f1d1d;
+    --error-text: #fecaca;
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  }
+}
+
+/* ---- Base ---------------------------------------------------------------- */
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  background: var(--bg);
+  color: var(--text);
+}
+
+h1, h2 { margin: 0 0 0.5rem; }
+h2 { font-size: 1.2rem; }
+
+code {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.9em;
+}
+
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+.hidden { display: none !important; }
+
+/* ---- Header & footer ----------------------------------------------------- */
+
+.site-header {
+  background: var(--primary);
+  color: var(--primary-text);
+  padding: 1.5rem 0;
+  margin-bottom: 1.5rem;
+}
+
+.site-header h1 { font-size: 1.8rem; }
+.tagline { margin: 0; opacity: 0.9; }
+
+.site-footer {
+  margin-top: 3rem;
+  padding: 1.5rem 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+/* ---- Statistics strip ---------------------------------------------------- */
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 1.5rem;
+}
+
+.stat {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 0.9rem 1rem;
+  border-top: 4px solid var(--border);
+}
+
+.stat-not-started { border-top-color: var(--not-started); }
+.stat-in-progress { border-top-color: var(--in-progress); }
+.stat-completed   { border-top-color: var(--completed); }
+
+.stat-value {
+  display: block;
+  font-size: 1.8rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.stat-label {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+/* ---- Messages ------------------------------------------------------------ */
+
+.message {
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius);
+  margin-bottom: 1rem;
+}
+
+.message-success { background: var(--success-bg); color: var(--success-text); }
+.message-error   { background: var(--error-bg);   color: var(--error-text); }
+
+/* ---- Cards & form -------------------------------------------------------- */
+
+.card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.form-row { margin-bottom: 1rem; }
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 16px;
+}
+
+label {
+  display: block;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 0.3rem;
+}
+
+input, textarea, select {
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  font: inherit;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+input:focus, textarea:focus, select:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+  border-color: var(--primary);
+}
+
+textarea { resize: vertical; }
+
+.form-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ---- Buttons ------------------------------------------------------------- */
+
+.btn {
+  padding: 0.55rem 1rem;
+  font: inherit;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn:hover { filter: brightness(0.95); }
+
+.btn-primary {
+  background: var(--primary);
+  color: var(--primary-text);
+  border-color: var(--primary);
+}
+
+.btn-danger {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.btn-small {
+  padding: 0.35rem 0.7rem;
+  font-size: 0.85rem;
+}
+
+/* ---- Course list --------------------------------------------------------- */
+
+.list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.course-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.course {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.course-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.course h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  overflow-wrap: anywhere;
+}
+
+.course-description {
+  margin: 0;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.course-meta {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.course-meta.overdue { color: var(--danger); font-weight: 600; }
+
+.course-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: auto;      /* push the buttons to the bottom of the card */
+  padding-top: 0.5rem;
+}
+
+/* Status badge: colour chosen by the data-status attribute */
+.badge {
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.badge[data-status="Not Started"] { background: var(--not-started); }
+.badge[data-status="In Progress"] { background: var(--in-progress); }
+.badge[data-status="Completed"]   { background: var(--completed); }
+
+.empty-state {
+  text-align: center;
+  color: var(--muted);
+  padding: 2rem 0;
+}
+
+/* ---- Responsive tweaks --------------------------------------------------- */
+
+@media (max-width: 600px) {
+  .form-grid { grid-template-columns: 1fr; }
+  .site-header h1 { font-size: 1.5rem; }
+  .course-list { grid-template-columns: 1fr; }
+}

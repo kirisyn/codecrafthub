@@ -15,7 +15,7 @@ import json                      # read/write the JSON file
 import os                        # check whether the data file exists
 from datetime import date, datetime  # validate target_date, generate created_at
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -184,6 +184,35 @@ def handle_method_not_allowed(exc):
 
 
 # ---------------------------------------------------------------------------
+# Dashboard (the HTML/CSS/JS frontend in the static/ folder)
+# ---------------------------------------------------------------------------
+
+@app.get("/")
+def dashboard():
+    """Serve the dashboard page. Flask already serves everything inside the
+    static/ folder at /static/..., so the page's CSS and JS files need no
+    extra routes of their own."""
+    return send_from_directory(app.static_folder, "index.html")
+
+
+@app.after_request
+def add_cors_headers(response):
+    """Allow the dashboard to call the API even when it is opened from
+    another origin, e.g. a file on disk or a page hosted on Bolt.new.
+
+    Browsers block cross-origin requests unless the server sends these
+    CORS (Cross-Origin Resource Sharing) headers. Flask answers the
+    browser's OPTIONS "preflight" request automatically; this hook just
+    adds the headers to every response, including that one.
+    Not needed when the page is served by this same app at /.
+    """
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+    return response
+
+
+# ---------------------------------------------------------------------------
 # REST endpoints
 # ---------------------------------------------------------------------------
 
@@ -322,6 +351,7 @@ if __name__ == "__main__":
     print("- CodeCraftHub API is starting...")
     print(f"- Data will be stored in: {DATA_FILE}")
     print("- API will be available at: http://localhost:5000")
+    print("- Dashboard: open http://localhost:5000 in your browser")
     # debug=True reloads the server when you edit the code and shows
     # detailed error pages. Turn it off for anything public.
     app.run(debug=True)
