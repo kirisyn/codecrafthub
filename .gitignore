@@ -1,0 +1,11 @@
+# Virtual environment - every developer creates their own with python -m venv
+.venv/
+
+# Python bytecode and test caches
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Your personal course data. The app recreates the file automatically.
+courses.json
+courses.json.tmp
